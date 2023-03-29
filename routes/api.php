@@ -19,4 +19,4 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 
-Route::post("payment_intents",[\App\Http\Controllers\Payments\Stripe\StripeIntegration::class,"createPaymentIntent"]);
+Route::post("executePayment",[\App\Http\Controllers\Payments\Stripe\StripeIntegration::class,"executePayment"]);

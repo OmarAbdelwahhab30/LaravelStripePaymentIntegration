@@ -12,59 +12,64 @@ use Stripe\Token;
 
 class StripeIntegration extends Controller
 {
+    private $stripe;
 
-    public function createPaymentIntent(Request $request){
+    public function executePayment(Request $request){
 
         $dateArr = $this->explodeDate($request->expiry_date);
 
         $stripe = new \Stripe\StripeClient(config("services.stripe.secret_key"));
 
-        $customer = $stripe->customers->create([
+        $this->stripe = $stripe;
+
+        $CustomerData = [
             'description' => 'My First Test Customer (created for API docs at https://www.stripe.com/docs/api)',
             'email' => "omar@gmail.com",
             'name' => "omarkishk"
-        ]);
-        $tokenized = $stripe->tokens->create([
-            'card' => [
-                "number"    => $request->input('card_number'),
-                "exp_month" => $dateArr[0],
-                "exp_year"  => $dateArr[1],
-                "cvc"       => $request->input('cvc'),
-                "name"      => $request->input('name')
-            ],
-        ]);
+        ];
+        $customer = $this->createCustomer($CustomerData);
 
-//        $stripe->charges->create([
-//            'amount' => 2000,
-//            'currency' => 'EGP',
-//            'source' => 'tok_visa',
-//            'description' => 'with token , sure?',
-//        ]);
 
-        $product = $stripe->products->create(['active' => true, 'name' => 'My product']);
-        $price  = $stripe->prices->create([
+        $Card = [
+            "number"    => $request->input('card_number'),
+            "exp_month" => $dateArr[0],
+            "exp_year"  => $dateArr[1],
+            "cvc"       => $request->input('cvc'),
+            "name"      => $request->input('name')
+        ];
+
+        $tokenized = $this->tokenizeCard($Card);
+        $product   = $this->createProduct();
+
+        $PriceData = [
             'unit_amount' => 2000,
             'currency' => 'EGP',
             'recurring' => ['interval' => 'month'],
             'product' => $product['id'],
-        ]);
+        ];
+        $price     = $this->createPrice($PriceData);
+
+
         $lineItems = [[
             'price' => $price['id'],
             'quantity' => 1,
         ]];
-        $stripe->checkout->sessions->create([
+
+        $session = [
             'payment_method_types' => ['card'],
-            //'customer_email' => Auth::user()->email,
             'line_items' => $lineItems,
             'mode' => 'subscription',
             'subscription_data' => [
                 'trial_from_plan' => true,
             ],
-            'success_url' => "https://www.google.com/",
-            'cancel_url' => "https://www.youtube.com",
-        ]);
+            'success_url' => "https://www.example1.com/",
+            'cancel_url' => "https://www.example2.com",
+        ];
+        $this->startPaymentSession($session);
 
-        $payemnt = $stripe->paymentIntents->create([
+        $this->startPaymentSession($session);
+
+        $PaymentIntent = [
             'amount' => 2000,
             'currency' => 'EGP',
             'payment_method_types' => ['card'],
@@ -76,12 +81,46 @@ class StripeIntegration extends Controller
                 ]
             ],
             "confirm" => true
-        ]);
-        return response()->json($tokenized);
+        ];
+
+        $payemnt = $this->createPaymentIntent($PaymentIntent);
+
+        return response()->json($payemnt->status);
     }
 
     public function explodeDate($date){
         $Date = explode('/', $date);
         return $Date;
+    }
+    public function createCustomer($data){
+        $customer = $this->stripe->customers->create([
+            'description' => $data['description'],
+            'email'       => $data['email'],
+            'name'        => $data['name'],
+        ]);
+        return $customer;
+    }
+
+    public function tokenizeCard($card){
+        $tokenized = $this->stripe->tokens->create([
+            'card' => $card,
+        ]);
+        return $tokenized;
+    }
+
+    public function createProduct(){
+        return $this->stripe->products->create(['active' => true, 'name' => 'My product']);
+    }
+
+    public function createPrice($Price){
+        return $this->stripe->prices->create($Price);
+    }
+
+    public function startPaymentSession($session){
+        $this->stripe->checkout->sessions->create($session);
+    }
+
+    public function createPaymentIntent($paymentIntent){
+        return $this->stripe->paymentIntents->create($paymentIntent);
     }
 }
