@@ -83,9 +83,12 @@ class StripeIntegration extends Controller
             "confirm" => true
         ];
 
-        $payemnt = $this->createPaymentIntent($PaymentIntent);
+        $payment = $this->createPaymentIntent($PaymentIntent);
 
-        return response()->json($payemnt->status);
+        if($this->paymentStatusCheck($payment['status'])){
+            return response()->json(['response' => "Your payment was successful"]);
+        }
+        return response()->json(['response' => "something went wrong , please try again later"]);
     }
 
     public function explodeDate($date){
@@ -122,5 +125,12 @@ class StripeIntegration extends Controller
 
     public function createPaymentIntent($paymentIntent){
         return $this->stripe->paymentIntents->create($paymentIntent);
+    }
+
+    public function paymentStatusCheck($status){
+        if ($status === "succeeded"){
+            return true;
+        }
+        return false;
     }
 }
