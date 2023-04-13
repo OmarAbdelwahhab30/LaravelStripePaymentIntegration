@@ -23,7 +23,7 @@ class StripeIntegration extends Controller
         $this->stripe = $stripe;
 
         $CustomerData = [
-            'description' => 'My First Test Customer (created for API docs at https://www.stripe.com/docs/api)',
+            'description' => '..',
             'email' => "omar@gmail.com",
             'name' => "omarkishk"
         ];
@@ -67,7 +67,7 @@ class StripeIntegration extends Controller
         ];
         $this->startPaymentSession($session);
 
-        $this->startPaymentSession($session);
+        //$this->startPaymentSession($session);
 
         $PaymentIntent = [
             'amount' => 2000,
