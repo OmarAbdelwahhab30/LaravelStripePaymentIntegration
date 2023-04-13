@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Payments\Stripe\prebuiltController;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\User;
 use App\Traits\ApiResponseHandler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Product;
 use Stripe\StripeClient;
 
 class PaymentController extends Controller
